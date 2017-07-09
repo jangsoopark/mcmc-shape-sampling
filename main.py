@@ -15,7 +15,7 @@ from mcmc_shape_sampling import mcmc_shape_sampling
 from evaluate_energy_with_shape_prior import evaluate_energy_with_shape_prior
 
 image_id = '01'
-dataset_name = 'aircraft'
+dataset_name = 'MNIST'  # 'aircraft' or 'MNIST'
 
 test_image_path = './%s/testImages/testImage%s' % (dataset_name, image_id)
 
@@ -59,8 +59,8 @@ num_of_class_conf = {'aircraft': 1, 'MNIST': 10}
 num_of_classes = num_of_class_conf[dataset_name]
 num_of_shapes_in_each_class = 10
 
-pose_for_each_class = np.zeros((4, num_of_classes))
-pose_for_each_class[3, :] = 1
+pose_for_each_class = np.zeros((num_of_classes, 4))
+pose_for_each_class[:, 3] = 1
 dt = 0.2  # gradient step size
 
 for i in range(num_of_iterations):
