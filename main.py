@@ -22,7 +22,7 @@ test_image_path = './%s/testImages/testImage%s' % (dataset_name, image_id)
 if dataset_name == 'aircraft':
     training_image_path = './%s/trainingShapes/trainingSet%s' % (dataset_name, image_id)
 else:
-    training_image_path = './%s/trainingShapes/trainingSet' % (dataset_name)
+    training_image_path = './%s/trainingShapes/trainingSet' % dataset_name
 
 test_image_file = loadmat(test_image_path)
 training_image_file = loadmat(training_image_path)
@@ -43,7 +43,7 @@ plt.show()
 
 training_matrix = training_image_file['AlignedShapeMatrix']
 num_of_shapes_in_training_set = training_matrix.shape[1]
-training_phi_matrix = np.zeros((size_i * size_j, num_of_shapes_in_training_set))
+training_phi_matrix = np.zeros((num_of_shapes_in_training_set, size_i * size_j))
 
 # construct level set representation of shapes in training set
 for i in range(num_of_shapes_in_training_set):
@@ -51,7 +51,7 @@ for i in range(num_of_shapes_in_training_set):
     dummy = generate_level_set(-2 * current_shape + 1)
     dummy = dummy.T
 
-    training_phi_matrix[:, i] = dummy[:].flatten()
+    training_phi_matrix[i, :] = dummy[:].flatten()
 
 # curve evolution with data term
 num_of_iterations = 20
@@ -72,7 +72,6 @@ for i in range(num_of_iterations):
                                                      psi.flatten(),
                                                      narrow_band.flatten(),
                                                      training_matrix.flatten(),
-                                                     training_phi_matrix.flatten(),
                                                      pose_for_each_class.flatten(),
                                                      num_of_classes, num_of_shapes_in_each_class,
                                                      dt,
@@ -121,7 +120,7 @@ for i in range(num_of_samples):
 
         for k in range(num_of_iteration_for_single_pertubation):
             narrow_band = create_narrow_band(psi_candidate, 5)
-            psi_candidate, p_forward, p_reverse, current_selected_class_id, current_selected_shape_id = mcmc_shape_sampling(
+            result = mcmc_shape_sampling(
                 test_image_file['testImage'].flatten(),
                 psi_candidate.flatten(),
                 narrow_band.flatten(),
@@ -139,12 +138,10 @@ for i in range(num_of_samples):
                 previous_selected_shape_id,
                 accepted_count, pose,
                 k, beta, size_i, size_j)
+            psi_candidate, p_forward, p_reverse, current_selected_class_id, current_selected_shape_id = result
 
             psi_candidate = psi_candidate.reshape((size_i, size_j))
 
-            # plt.imshow(test_image_file['testImage'], cmap='gray')
-            # plt.contour(narrow_band, levels=[0], colors='r')
-            # plt.show()
         p_of_candidate = evaluate_energy_with_shape_prior(
             psi_candidate.flatten(), training_phi_matrix.flatten(),
             num_of_classes, num_of_shapes_in_each_class,
