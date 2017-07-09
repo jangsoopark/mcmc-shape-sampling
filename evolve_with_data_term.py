@@ -1,4 +1,3 @@
-
 from six.moves import xrange
 
 from utils import *
@@ -6,12 +5,8 @@ from utils import *
 import numpy as np
 
 
-def evolve_with_data_term(image, psi,
-                          narrow_band,
-                          training_image_matrix,
-                          pose_for_each_class_vector,
-                          num_of_classes, num_of_shapes_in_each_class,
-                          dt,
+def evolve_with_data_term(image, psi, narrow_band, training_image_matrix, pose_for_each_class_vector,
+                          num_of_classes, num_of_shapes_in_each_class, dt,
                           current_iteration, last_iteration, kappa, size_i, size_j):
     size = size_i * size_j
 

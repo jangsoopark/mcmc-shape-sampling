@@ -98,27 +98,30 @@ beta = 1
 
 for i in range(num_of_samples):
 
+    print('sampling : %d' % i)
     current_curve = psi
     previous_selected_shape_id = 0
     accepted_count = 0
     pose = np.zeros(4)
     pose[3] = 360 / 360
 
+    current_selected_class_id = 0
     for j in range(num_of_sampling_iterations):
+
+        print('sampling iteration : %d' % j)
         psi_candidate = current_curve[:, :]
 
-        mh_threshold = np.random.uniform()
         random_number_for_class_selection = np.random.uniform()
 
         random_number_array = np.random.uniform(size=gamma)
         p_forward = 0
         p_reverse = 0
 
-        if j == 0:
-            current_selected_class_id = 0
         current_selected_shape_id = np.zeros(gamma, np.int32)
 
         for k in range(num_of_iteration_for_single_pertubation):
+
+            print('iteration for single pertubation : %d' % k)
             narrow_band = create_narrow_band(psi_candidate, 5)
             result = mcmc_shape_sampling(
                 test_image_file['testImage'].flatten(),
@@ -139,23 +142,26 @@ for i in range(num_of_samples):
                 accepted_count, pose,
                 k, beta, size_i, size_j)
             psi_candidate, p_forward, p_reverse, current_selected_class_id, current_selected_shape_id = result
-
             psi_candidate = psi_candidate.reshape((size_i, size_j))
 
+        print('evaluate for candidate prior')
         p_of_candidate = evaluate_energy_with_shape_prior(
             psi_candidate.flatten(), training_phi_matrix.flatten(),
             num_of_classes, num_of_shapes_in_each_class,
             pose, current_selected_class_id, size_i, size_j)
 
+        print('evaluate for current prior')
         p_of_current = evaluate_energy_with_shape_prior(
             current_curve.flatten(), training_phi_matrix.flatten(),
             num_of_classes, num_of_shapes_in_each_class,
             pose, current_selected_class_id, size_i, size_j)
 
+        '''
         minus_log_of_data_candidate = evaluate_energy_with_data_term(
             test_image_file['testImage'], psi_candidate, occluded_region)
         minus_log_of_data_current = evaluate_energy_with_data_term(
             test_image_file['testImage'], current_curve, occluded_region)
+        '''
 
         energy_candidate = alpha * -np.log(p_of_candidate)
         energy_current = alpha * -np.log(p_of_current)
@@ -163,17 +169,18 @@ for i in range(num_of_samples):
         pi_of_candidate = np.exp(-energy_candidate)
         pi_of_current = np.exp(-energy_current)
 
+        mh_threshold = np.random.uniform()
         hasting_ratio = (pi_of_candidate * p_reverse) / (pi_of_current * p_forward)
-
+        print('metropolis-hasting ratio : %f, hasting ratio : %f' % (mh_threshold, hasting_ratio))
         if mh_threshold < hasting_ratio or accepted_count == 0:
             current_curve = psi_candidate
             previous_selected_shape_id = current_selected_shape_id
             accepted_count += 1
+            print('accepted count : %d' % accepted_count)
         else:
             current_curve = current_curve
+
     plt.imshow(test_image_file['testImage'], cmap='gray')
     plt.contour(current_curve, levels=[0], colors='r')
-
-    # plt.show()
     plt.savefig('./result/%03d_sample.png' % i)
     plt.close()
